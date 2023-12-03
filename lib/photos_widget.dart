@@ -41,8 +41,7 @@ class _PhotosWidgetState extends State<PhotosWidget> {
               },
               child: ClipRRect(
                   borderRadius: BorderRadius.circular(15),
-                  child: Image.network(
-                      height: 100, widget.movie['background_image'] as String)),
+                  child: Image.network(height: 100, widget.movie['background_image'] as String)),
             ),
             const SizedBox(
               width: 10,
@@ -50,15 +49,12 @@ class _PhotosWidgetState extends State<PhotosWidget> {
             GestureDetector(
               onTap: () {
                 setState(() {
-                  shownPictureUrl =
-                      widget.movie['background_image_original'] as String;
+                  shownPictureUrl = widget.movie['background_image_original'] as String;
                 });
               },
               child: ClipRRect(
                   borderRadius: BorderRadius.circular(15),
-                  child: Image.network(
-                      height: 100,
-                      widget.movie['background_image_original'] as String)),
+                  child: Image.network(height: 100, widget.movie['background_image_original'] as String)),
             ),
             const SizedBox(
               width: 10,
@@ -71,10 +67,8 @@ class _PhotosWidgetState extends State<PhotosWidget> {
               },
               child: ClipRRect(
                   borderRadius: BorderRadius.circular(15),
-                  child: Image.network(
-                      fit: BoxFit.fitHeight,
-                      height: 100,
-                      widget.movie['small_cover_image'] as String)),
+                  child:
+                      Image.network(fit: BoxFit.fitHeight, height: 100, widget.movie['small_cover_image'] as String)),
             ),
             const SizedBox(
               width: 10,
@@ -82,15 +76,12 @@ class _PhotosWidgetState extends State<PhotosWidget> {
             GestureDetector(
               onTap: () {
                 setState(() {
-                  shownPictureUrl =
-                      widget.movie['medium_cover_image'] as String;
+                  shownPictureUrl = widget.movie['medium_cover_image'] as String;
                 });
               },
               child: ClipRRect(
                   borderRadius: BorderRadius.circular(15),
-                  child: Image.network(
-                      height: 100,
-                      widget.movie['medium_cover_image'] as String)),
+                  child: Image.network(height: 100, widget.movie['medium_cover_image'] as String)),
             ),
             const SizedBox(
               width: 10,
@@ -103,9 +94,7 @@ class _PhotosWidgetState extends State<PhotosWidget> {
               },
               child: ClipRRect(
                   borderRadius: BorderRadius.circular(15),
-                  child: Image.network(
-                      height: 100,
-                      widget.movie['large_cover_image'] as String)),
+                  child: Image.network(height: 100, widget.movie['large_cover_image'] as String)),
             ),
           ],
         ),
