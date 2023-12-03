@@ -38,7 +38,6 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  // API URL
   String apiUrl = 'https://yts.mx/api/v2/list_movies.json';
 
   Future<Response> fetchData() async {
