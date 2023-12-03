@@ -1,4 +1,11 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/http.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+import 'photos_widget.dart';
 
 void main() {
   runApp(const MyApp());
@@ -7,46 +14,22 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Movies API reader',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a blue toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: const ColorScheme.dark(),
         useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const MyHomePage(title: 'Movies API reader'),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
 
   final String title;
 
@@ -55,71 +38,388 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+  // API URL
+  String apiUrl = 'https://yts.mx/api/v2/list_movies.json';
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+  Future<Response> fetchData() async {
+    // Make a GET request
+    final Response response = await http.get(Uri.parse(apiUrl));
+
+    if (response.statusCode == 200) {
+      // Successful request
+      return response;
+    } else {
+      // Request failed with an error code
+      throw Exception('Failed to load data');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
+        appBar: AppBar(
+          title: Center(
+              child: Text(widget.title,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w200, fontSize: 30))),
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
-    );
+        body: FutureBuilder<Response>(
+            future: fetchData(),
+            builder: (BuildContext context, AsyncSnapshot<Response> snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(
+                  child: CircularProgressIndicator(),
+                );
+              } else if (snapshot.hasError) {
+                return Center(
+                  child: Text('Error: ${snapshot.error}'),
+                );
+              } else {
+                final Map<String, dynamic> snapshotData =
+                    json.decode(snapshot.data!.body) as Map<String, dynamic>;
+                final Map<String, dynamic> jsonData =
+                    snapshotData['data'] as Map<String, dynamic>;
+                final List<dynamic> movies =
+                    jsonData['movies'] as List<dynamic>;
+
+                return ListView.builder(
+                    itemCount: movies.length,
+                    itemBuilder: (BuildContext context, int index) {
+                      final Map<String, dynamic> movie =
+                          movies[index] as Map<String, dynamic>;
+                      final List<dynamic> torrents =
+                          movie['torrents'] as List<dynamic>;
+
+                      return Card(
+                        clipBehavior: Clip.hardEdge,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Row(
+                              children: <Widget>[
+                                Expanded(
+                                    child: Text(
+                                        textAlign: TextAlign.center,
+                                        'id: ${movie['id'] as int}',
+                                        style: const TextStyle(
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w200))),
+                                Expanded(
+                                    child: Text(
+                                        textAlign: TextAlign.center,
+                                        'IMDB Code: ${movie['imdb_code'] as String}',
+                                        style: const TextStyle(
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w200))),
+                                Expanded(
+                                    child: Text(
+                                        textAlign: TextAlign.center,
+                                        'YT Trailer Code: ${movie['yt_trailer_code'] as String}',
+                                        style: const TextStyle(
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w200))),
+                              ],
+                            ),
+                            const SizedBox(
+                              height: 20,
+                            ),
+                            Center(
+                                child: Text(
+                                    textAlign: TextAlign.center,
+                                    movie['title_long'] as String,
+                                    style: const TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.w400))),
+                            Center(
+                                child: Text(movie['slug'] as String,
+                                    style: const TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w200))),
+                            const SizedBox(
+                              height: 10,
+                            ),
+                            PhotosWidget(movie: movie),
+                            const SizedBox(
+                              height: 10,
+                            ),
+                            Padding(
+                                padding: const EdgeInsets.all(10.0),
+                                child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: <Widget>[
+                                      Center(
+                                        child: Text(
+                                            textAlign: TextAlign.center,
+                                            '${movie['genres']}',
+                                            style: const TextStyle(
+                                                fontSize: 17,
+                                                fontWeight: FontWeight.w400)),
+                                      ),
+                                      const SizedBox(
+                                        height: 10,
+                                      ),
+                                      GestureDetector(
+                                        onLongPress: () => movie['summary'] !=
+                                                ''
+                                            ? showDialog<void>(
+                                                context: context,
+                                                builder:
+                                                    (BuildContext context) =>
+                                                        AlertDialog(
+                                                          content: SingleChildScrollView(
+                                                              child: Text(
+                                                                  textAlign:
+                                                                      TextAlign
+                                                                          .start,
+                                                                  movie['summary']
+                                                                      as String,
+                                                                  style: const TextStyle(
+                                                                      fontSize:
+                                                                          30,
+                                                                      fontWeight:
+                                                                          FontWeight
+                                                                              .w200))),
+                                                          actions: <Widget>[
+                                                            TextButton(
+                                                                onPressed: () {
+                                                                  Navigator.of(
+                                                                          context)
+                                                                      .pop();
+                                                                },
+                                                                child:
+                                                                    const Text(
+                                                                        'Close'))
+                                                          ],
+                                                        ))
+                                            : null,
+                                        child: Text(
+                                            maxLines: 3,
+                                            overflow: TextOverflow.fade,
+                                            textAlign: TextAlign.left,
+                                            'summary: ${movie['summary']}',
+                                            style: const TextStyle(
+                                                fontSize: 15,
+                                                fontWeight: FontWeight.w200)),
+                                      ),
+                                      const SizedBox(
+                                        height: 10,
+                                      ),
+                                      GestureDetector(
+                                        onLongPress:
+                                            () =>
+                                                movie['description_full'] != ''
+                                                    ? showDialog<void>(
+                                                        context: context,
+                                                        builder:
+                                                            (BuildContext
+                                                                    context) =>
+                                                                AlertDialog(
+                                                                  content: SingleChildScrollView(
+                                                                      child: Text(
+                                                                          textAlign: TextAlign
+                                                                              .start,
+                                                                          movie['description_full']
+                                                                              as String,
+                                                                          style: const TextStyle(
+                                                                              fontSize: 30,
+                                                                              fontWeight: FontWeight.w200))),
+                                                                  actions: <Widget>[
+                                                                    TextButton(
+                                                                        onPressed:
+                                                                            () {
+                                                                          Navigator.of(context)
+                                                                              .pop();
+                                                                        },
+                                                                        child: const Text(
+                                                                            'Close'))
+                                                                  ],
+                                                                ))
+                                                    : null,
+                                        child: Text(
+                                            maxLines: 3,
+                                            overflow: TextOverflow.fade,
+                                            textAlign: TextAlign.left,
+                                            'description_full: ${movie['description_full']}',
+                                            style: const TextStyle(
+                                                fontSize: 15,
+                                                fontWeight: FontWeight.w200)),
+                                      ),
+                                      const SizedBox(
+                                        height: 10,
+                                      ),
+                                      GestureDetector(
+                                        onLongPress: () => movie['synopsis'] !=
+                                                ''
+                                            ? showDialog<void>(
+                                                context: context,
+                                                builder:
+                                                    (BuildContext context) =>
+                                                        AlertDialog(
+                                                          content: SingleChildScrollView(
+                                                              child: Text(
+                                                                  textAlign:
+                                                                      TextAlign
+                                                                          .start,
+                                                                  movie['synopsis']
+                                                                      as String,
+                                                                  style: const TextStyle(
+                                                                      fontSize:
+                                                                          30,
+                                                                      fontWeight:
+                                                                          FontWeight
+                                                                              .w200))),
+                                                          actions: <Widget>[
+                                                            TextButton(
+                                                                onPressed: () {
+                                                                  Navigator.of(
+                                                                          context)
+                                                                      .pop();
+                                                                },
+                                                                child:
+                                                                    const Text(
+                                                                        'Close'))
+                                                          ],
+                                                        ))
+                                            : null,
+                                        child: Text(
+                                            maxLines: 3,
+                                            overflow: TextOverflow.fade,
+                                            textAlign: TextAlign.left,
+                                            'synopsis: ${movie['synopsis']}',
+                                            style: const TextStyle(
+                                                fontSize: 15,
+                                                fontWeight: FontWeight.w200)),
+                                      ),
+                                      const SizedBox(
+                                        height: 10,
+                                      ),
+                                      Text('title: ${movie['title']}',
+                                          style: const TextStyle(
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.w200)),
+                                      Text(
+                                          'title_english: ${movie['title_english']}',
+                                          style: const TextStyle(
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.w200)),
+                                      Text('language: ${movie['language']}',
+                                          style: const TextStyle(
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.w200)),
+                                      Text('year: ${movie['year']}',
+                                          style: const TextStyle(
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.w200)),
+                                      Text('rating: ${movie['rating']}',
+                                          style: const TextStyle(
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.w200)),
+                                      Text(
+                                          'mpa_rating: ${movie['mpa_rating'] == '' ? 'N/A' : movie['mpa_rating']}',
+                                          style: const TextStyle(
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.w200)),
+                                      Text('runtime: ${movie['runtime']}',
+                                          style: const TextStyle(
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.w200)),
+                                      Text(
+                                          'date_uploaded: ${movie['date_uploaded']}',
+                                          style: const TextStyle(
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.w200)),
+                                      Text('state: ${movie['state']}',
+                                          style: const TextStyle(
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.w200)),
+                                      GestureDetector(
+                                          onTap: () => showDialog<void>(
+                                              context: context,
+                                              builder: (BuildContext context) {
+                                                final List<Widget> widgets =
+                                                    <Widget>[
+                                                  const SizedBox(
+                                                    height: 10,
+                                                  )
+                                                ];
+
+                                                for (int i = 0;
+                                                    i < torrents.length;
+                                                    i++) {
+                                                  widgets.addAll(<Widget>[
+                                                    Text(
+                                                        'url: ${torrents[i]['url']}'),
+                                                    Text(
+                                                        'hash: ${torrents[i]['hash']}'),
+                                                    Text(
+                                                        'quality: ${torrents[i]['quality']}'),
+                                                    Text(
+                                                        'type: ${torrents[i]['type']}'),
+                                                    Text(
+                                                        'is_repack: ${torrents[i]['is_repack']}'),
+                                                    Text(
+                                                        'size: ${torrents[i]['size']}'),
+                                                    Text(
+                                                        'size_bytes: ${torrents[i]['size_bytes']}'),
+                                                    Text(
+                                                        'date_uploaded: ${torrents[i]['date_uploaded']}'),
+                                                    Text(
+                                                        'date_uploaded_unix: ${torrents[i]['date_uploaded_unix']}'),
+                                                    Text(
+                                                        'seeds: ${torrents[i]['seeds']}'),
+                                                    Text(
+                                                        'peers: ${torrents[i]['peers']}'),
+                                                    Text(
+                                                        'video_codec: ${torrents[i]['video_codec']}'),
+                                                    Text(
+                                                        'bit_depth: ${torrents[i]['bit_depth']}'),
+                                                  ]);
+                                                }
+                                                return AlertDialog(
+                                                    actions: <Widget>[
+                                                      TextButton(
+                                                          onPressed: () {
+                                                            Navigator.of(
+                                                                    context)
+                                                                .pop();
+                                                          },
+                                                          child: const Text(
+                                                              'Close'))
+                                                    ],
+                                                    content: Column(
+                                                      children: widgets,
+                                                    ));
+                                              }),
+                                          child: Text(
+                                              'torrents: ${torrents.length}',
+                                              style: const TextStyle(
+                                                  fontSize: 20,
+                                                  fontWeight:
+                                                      FontWeight.w200))),
+                                      Center(
+                                          child: ElevatedButton(
+                                              style: ButtonStyle(
+                                                  backgroundColor:
+                                                      MaterialStateProperty.all<Color>(
+                                                          Theme.of(context)
+                                                              .colorScheme
+                                                              .primary),
+                                                  foregroundColor:
+                                                      MaterialStateProperty.all<
+                                                              Color>(
+                                                          Theme.of(context)
+                                                              .colorScheme
+                                                              .onPrimary)),
+                                              onPressed: () => launchUrl(
+                                                  Uri.parse(movie['url'] as String)),
+                                              child: const Text('Open YTS page')))
+                                    ]))
+                          ],
+                        ),
+                      );
+                    });
+              }
+            }));
   }
 }
