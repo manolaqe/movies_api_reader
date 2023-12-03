@@ -42,14 +42,11 @@ class _MyHomePageState extends State<MyHomePage> {
   String apiUrl = 'https://yts.mx/api/v2/list_movies.json';
 
   Future<Response> fetchData() async {
-    // Make a GET request
     final Response response = await http.get(Uri.parse(apiUrl));
 
     if (response.statusCode == 200) {
-      // Successful request
       return response;
     } else {
-      // Request failed with an error code
       throw Exception('Failed to load data');
     }
   }
@@ -80,7 +77,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 final Map<String, dynamic> jsonData =
                     snapshotData['data'] as Map<String, dynamic>;
                 final List<dynamic> movies =
-                    jsonData['movies'] as List<dynamic>;
+                    jsonData['movies']! as List<dynamic>;
 
                 return ListView.builder(
                     itemCount: movies.length,
@@ -347,33 +344,38 @@ class _MyHomePageState extends State<MyHomePage> {
                                                 for (int i = 0;
                                                     i < torrents.length;
                                                     i++) {
+                                                  final Map<String, dynamic>
+                                                      torrent = torrents[i]
+                                                          as Map<String,
+                                                              dynamic>;
+
                                                   widgets.addAll(<Widget>[
                                                     Text(
-                                                        'url: ${torrents[i]['url']}'),
+                                                        'url: ${torrent['url']}'),
                                                     Text(
-                                                        'hash: ${torrents[i]['hash']}'),
+                                                        'hash: ${torrent['hash']}'),
                                                     Text(
-                                                        'quality: ${torrents[i]['quality']}'),
+                                                        'quality: ${torrent['quality']}'),
                                                     Text(
-                                                        'type: ${torrents[i]['type']}'),
+                                                        'type: ${torrent['type']}'),
                                                     Text(
-                                                        'is_repack: ${torrents[i]['is_repack']}'),
+                                                        'is_repack: ${torrent['is_repack']}'),
                                                     Text(
-                                                        'size: ${torrents[i]['size']}'),
+                                                        'size: ${torrent['size']}'),
                                                     Text(
-                                                        'size_bytes: ${torrents[i]['size_bytes']}'),
+                                                        'size_bytes: ${torrent['size_bytes']}'),
                                                     Text(
-                                                        'date_uploaded: ${torrents[i]['date_uploaded']}'),
+                                                        'date_uploaded: ${torrent['date_uploaded']}'),
                                                     Text(
-                                                        'date_uploaded_unix: ${torrents[i]['date_uploaded_unix']}'),
+                                                        'date_uploaded_unix: ${torrent['date_uploaded_unix']}'),
                                                     Text(
-                                                        'seeds: ${torrents[i]['seeds']}'),
+                                                        'seeds: ${torrent['seeds']}'),
                                                     Text(
-                                                        'peers: ${torrents[i]['peers']}'),
+                                                        'peers: ${torrent['peers']}'),
                                                     Text(
-                                                        'video_codec: ${torrents[i]['video_codec']}'),
+                                                        'video_codec: ${torrent['video_codec']}'),
                                                     Text(
-                                                        'bit_depth: ${torrents[i]['bit_depth']}'),
+                                                        'bit_depth: ${torrent['bit_depth']}'),
                                                   ]);
                                                 }
                                                 return AlertDialog(
